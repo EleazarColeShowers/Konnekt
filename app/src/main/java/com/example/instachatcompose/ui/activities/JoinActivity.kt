@@ -32,6 +32,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.instachatcompose.R
+import com.example.instachatcompose.ui.activities.signup.SignUpActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 
 class JoinActivity: ComponentActivity() {
@@ -60,7 +61,7 @@ fun JoinPage(){
         AnimatedConnection()
         ConnectionWriteUp()
         RoundedClickableColumn(onClick ={
-            val intent = Intent(context, LoginActivity::class.java)
+            val intent = Intent(context, SignUpActivity::class.java)
             context.startActivity(intent)
         })
     }

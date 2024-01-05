@@ -23,7 +23,7 @@ import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 
 class MainActivity : ComponentActivity() {
-    private val splashScreenDuration = 10000L // 10 seconds in milliseconds
+    private val splashScreenDuration = 5000L // 10 seconds in milliseconds
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -1,5 +1,6 @@
 package com.example.instachatcompose.ui.activities.signup
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Space
 import androidx.activity.ComponentActivity
@@ -19,9 +20,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -137,6 +145,7 @@ fun SignUpProgress(onBackPressed: () -> Unit){
 
 @Composable
 fun Form(){
+    val context = LocalContext.current
     var username by remember {
         mutableStateOf("")
     }
@@ -322,9 +331,16 @@ fun Form(){
         }
        Spacer(modifier = Modifier.height(16.5.dp))
         Row {
-
+            CustomCheckbox()
+            Spacer(modifier = Modifier.width(6.dp))
             TermsAndConditionsText()
         }
+        Spacer(modifier = Modifier.height(44.5.dp))
+        ContinueBtn(onClick ={
+                val intent = Intent(context, SignUpActivity::class.java)
+                context.startActivity(intent)
+            })
+
     }
 }
 
@@ -335,7 +351,7 @@ fun TermsAndConditionsText() {
         append("I agree to the ")
         pushStyle(
             style = SpanStyle(
-                color = Color.Blue,
+                color = Color(android.graphics.Color.parseColor("#2F9ECE")), // Change color here
                 textDecoration = TextDecoration.Underline
             )
         )
@@ -352,5 +368,66 @@ fun TermsAndConditionsText() {
             // For example, navigate to terms and conditions screen
         }
     })
+}
+
+@Composable
+fun CustomCheckbox() {
+    var checked by remember { mutableStateOf(false) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { checked = !checked }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(24.dp)
+                .border(
+                    width = 1.dp,
+                    color = Color(android.graphics.Color.parseColor("#2F9ECE")), // Change color here
+                    shape = RoundedCornerShape(4.dp)
+                )
+                .background(
+                    color = if (checked) Color(android.graphics.Color.parseColor("#2F9ECE")) else Color.White, // Change color on check
+                    shape = RoundedCornerShape(4.dp)
+                )
+        ) {
+            if (checked) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Checked",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ContinueBtn(onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(25.dp), // Adjust the corner radius as needed
+        color = Color(0xFF2F9ECE), // Change the background color as needed
+        modifier = Modifier
+            .height(54.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Continue",
+                color = Color(0xFFFFFFFF), // Change the text color as needed
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
 }
 

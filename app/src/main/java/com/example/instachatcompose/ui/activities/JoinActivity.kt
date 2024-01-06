@@ -120,7 +120,7 @@ fun ConnectionWriteUp(){
 @Composable
 fun RoundedClickableColumn(onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(12.dp), // Adjust the corner radius as needed
+        shape = RoundedCornerShape(25.dp), // Adjust the corner radius as needed
         color = Color(0xFF2F9ECE), // Change the background color as needed
         modifier = Modifier
             .height(54.dp)

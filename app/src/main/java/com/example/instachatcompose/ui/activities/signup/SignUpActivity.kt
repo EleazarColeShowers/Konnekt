@@ -346,6 +346,7 @@ fun Form(){
 
 @Composable
 fun TermsAndConditionsText() {
+    val context = LocalContext.current
     val termsAndConditions = "Terms & Conditions"
     val text = buildAnnotatedString {
         append("I agree to the ")
@@ -365,6 +366,8 @@ fun TermsAndConditionsText() {
         val endIndex = startIndex + termsAndConditions.length
         if (it in startIndex..endIndex) {
             // Handle click action here if needed
+            val intent = Intent(context, TermsAndConditions::class.java)
+            context.startActivity(intent)
             // For example, navigate to terms and conditions screen
         }
     })
@@ -381,7 +384,7 @@ fun CustomCheckbox() {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(24.dp)
+                .size(20.dp)
                 .border(
                     width = 1.dp,
                     color = Color(android.graphics.Color.parseColor("#2F9ECE")), // Change color here

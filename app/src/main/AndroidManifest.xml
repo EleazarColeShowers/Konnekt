@@ -25,6 +25,7 @@
         </activity>
         <activity android:name=".ui.activities.JoinActivity"/>
         <activity android:name=".ui.activities.signup.SignUpActivity"/>
+        <activity android:name=".ui.activities.signup.TermsAndConditions"/>
     </application>
 
 </manifest>

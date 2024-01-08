@@ -4,7 +4,8 @@ buildscript {
         // Other repositories if needed
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.0' // Latest Gradle plugin version
+        classpath 'com.android.tools.build:gradle:4.2.0'
+        classpath 'com.google.gms:google-services:4.3.14'// Latest Gradle plugin version
         // Other dependencies if needed
     }
 }

@@ -3,6 +3,7 @@ package com.example.instachatcompose.ui.activities.signup
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Space
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -53,7 +54,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.instachatcompose.R
+import com.example.instachatcompose.ui.activities.JoinActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class SignUpActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,6 +149,9 @@ fun SignUpProgress(onBackPressed: () -> Unit){
 @Composable
 fun Form(){
     val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
+    var isChecked by remember { mutableStateOf(false) }
+
     var username by remember {
         mutableStateOf("")
     }
@@ -157,6 +163,7 @@ fun Form(){
     }
     val emailIcon= painterResource(id = R.drawable.emailicon)
     val passwordIcon= painterResource(id = R.drawable.passwordseen)
+
     Column() {
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -331,15 +338,22 @@ fun Form(){
         }
        Spacer(modifier = Modifier.height(16.5.dp))
         Row {
-            CustomCheckbox()
+            CustomCheckbox(checked = isChecked) { checked ->
+                isChecked = checked
+            }
             Spacer(modifier = Modifier.width(6.dp))
             TermsAndConditionsText()
         }
         Spacer(modifier = Modifier.height(44.5.dp))
-        ContinueBtn(onClick ={
+        ContinueBtn(
+            isChecked = isChecked,
+            onClick = {
+                performSignUp(auth, context as ComponentActivity, email, password, username)
                 val intent = Intent(context, SignUpActivity::class.java)
                 context.startActivity(intent)
-            })
+            },
+            onUnchecked = { /* Handle unchecked state */ }
+        )
 
     }
 }
@@ -374,12 +388,14 @@ fun TermsAndConditionsText() {
 }
 
 @Composable
-fun CustomCheckbox() {
-    var checked by remember { mutableStateOf(false) }
+fun CustomCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable { checked = !checked }
+        modifier = Modifier.clickable { onCheckedChange(!checked)  }
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -408,7 +424,14 @@ fun CustomCheckbox() {
 }
 
 @Composable
-fun ContinueBtn(onClick: () -> Unit) {
+fun ContinueBtn(
+    isChecked: Boolean,
+    onClick: () -> Unit,
+    onUnchecked: () -> Unit
+) {
+    val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
+
     Surface(
         shape = RoundedCornerShape(25.dp), // Adjust the corner radius as needed
         color = Color(0xFF2F9ECE), // Change the background color as needed
@@ -416,7 +439,14 @@ fun ContinueBtn(onClick: () -> Unit) {
             .height(54.dp)
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clickable(onClick = onClick)
+            .clickable {
+                if (isChecked) {
+                    onClick()
+                } else {
+                    onUnchecked()
+                    Toast.makeText(context, "Tick the checkbox to proceed", Toast.LENGTH_SHORT).show()
+                }
+            }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -434,3 +464,29 @@ fun ContinueBtn(onClick: () -> Unit) {
     }
 }
 
+fun performSignUp(
+    auth: FirebaseAuth,
+    context: ComponentActivity,
+    email: String,
+    password: String,
+    usernameTxt: String
+) {
+    if (email.isEmpty() || password.isEmpty() || usernameTxt.isEmpty()) {
+        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener(context) { task ->
+            if (task.isSuccessful) {
+                    val intent = Intent(context, JoinActivity::class.java)
+                context.startActivity(intent)
+                Toast.makeText(context, "Successfully sign up", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Error Occurred ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+}

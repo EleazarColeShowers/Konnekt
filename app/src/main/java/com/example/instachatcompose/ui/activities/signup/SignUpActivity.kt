@@ -116,7 +116,7 @@ fun SignUpProgress(onBackPressed: () -> Unit){
             contentDescription = null,
             modifier = Modifier
                 .height(24.dp)
-                .width(65.dp)
+                .width(55.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Image(
@@ -124,7 +124,7 @@ fun SignUpProgress(onBackPressed: () -> Unit){
             contentDescription = null,
             modifier = Modifier
                 .height(24.dp)
-                .width(65.dp)
+                .width(55.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Image(
@@ -132,7 +132,7 @@ fun SignUpProgress(onBackPressed: () -> Unit){
             contentDescription = null,
             modifier = Modifier
                 .height(24.dp)
-                .width(65.dp)
+                .width(55.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Image(
@@ -140,7 +140,7 @@ fun SignUpProgress(onBackPressed: () -> Unit){
             contentDescription = null,
             modifier = Modifier
                 .height(24.dp)
-                .width(65.dp)
+                .width(55.dp)
         )
         
     }
@@ -348,9 +348,11 @@ fun Form(){
         ContinueBtn(
             isChecked = isChecked,
             onClick = {
-                performSignUp(auth, context as ComponentActivity, email, password, username)
-                val intent = Intent(context, SignUpActivity::class.java)
-                context.startActivity(intent)
+                performSignUp(auth, context as ComponentActivity, email, password, username, onSuccess = {
+                    val intent = Intent(context, VerificationActivity::class.java)
+                    context.startActivity(intent)
+                })
+
             },
             onUnchecked = { /* Handle unchecked state */ }
         )
@@ -469,7 +471,8 @@ fun performSignUp(
     context: ComponentActivity,
     email: String,
     password: String,
-    usernameTxt: String
+    usernameTxt: String,
+    onSuccess: () -> Unit
 ) {
     if (email.isEmpty() || password.isEmpty() || usernameTxt.isEmpty()) {
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -479,9 +482,11 @@ fun performSignUp(
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener(context) { task ->
             if (task.isSuccessful) {
-                    val intent = Intent(context, JoinActivity::class.java)
+                val intent = Intent(context, VerificationActivity::class.java)
                 context.startActivity(intent)
                 Toast.makeText(context, "Successfully sign up", Toast.LENGTH_SHORT).show()
+                onSuccess() // Call the success callback
+
             } else {
                 Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
             }

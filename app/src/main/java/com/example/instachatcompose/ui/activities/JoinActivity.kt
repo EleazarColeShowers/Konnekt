@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,7 +47,9 @@ class JoinActivity: ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Column(modifier= Modifier.fillMaxSize()) {
+                    Column(modifier= Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())) {
                         JoinPage()
                     }
                 }
@@ -89,7 +93,7 @@ fun AnimatedConnection(modifier: Modifier = Modifier) {
             progress = preloaderProgress,
             modifier = modifier
                 .width(400.dp)
-                .height(430.dp)
+                .height(410.dp)
         )
     }
 }
@@ -103,12 +107,12 @@ fun ConnectionWriteUp(){
         Text(
             text = "Get Connected And Stay Connected",
             fontWeight = FontWeight.Bold,
-            fontSize = 40.sp,
+            fontSize = 35.sp,
             lineHeight = 50.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text ="Connect and network with friends, families and strangers all over the globe with voice calls, video calls and chats on ConnectNow",
+            text ="Connect and network with friends, families and strangers all over the globe with voice calls, video calls and chats on Konnekt",
             fontWeight = FontWeight.Light,
             fontSize = 18.sp,
             lineHeight = 25.sp

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,7 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.LottieAnimation
@@ -35,6 +39,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.signup.SignUpActivity
+import com.example.instachatcompose.ui.activities.signup.TermsAndConditions
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 
 class JoinActivity: ComponentActivity() {
@@ -148,3 +153,29 @@ fun RoundedClickableColumn(onClick: () -> Unit) {
     }
 }
 
+@Composable
+fun ExistingAccount() {
+    val context = LocalContext.current
+    val termsAndConditions = "Login"
+    val text = buildAnnotatedString {
+        append("Already have an account?")
+        pushStyle(
+            style = SpanStyle(
+                color = Color(android.graphics.Color.parseColor("#2F9ECE")), // Change color here
+                textDecoration = TextDecoration.Underline
+            )
+        )
+        append(termsAndConditions)
+    }
+
+    ClickableText(text = text, onClick = {
+        val startIndex = text.indexOf(termsAndConditions)
+        val endIndex = startIndex + termsAndConditions.length
+        if (it in startIndex..endIndex) {
+            // Handle click action here if needed
+            val intent = Intent(context, TermsAndConditions::class.java)
+            context.startActivity(intent)
+            // For example, navigate to terms and conditions screen
+        }
+    })
+}

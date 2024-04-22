@@ -1,6 +1,7 @@
 package com.example.instachatcompose.ui.activities.signup
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Suppress("DEPRECATION")
 class SignUpActivity: ComponentActivity() {
@@ -78,7 +80,8 @@ class SignUpActivity: ComponentActivity() {
 @Composable
 fun SignUpPage(onBackPressed: () -> Unit){
     var username by rememberSaveable { mutableStateOf("") }
-
+//    var bio: String = ""
+//    var selectedImageUri: Uri? = null
     Column (
         modifier= Modifier.padding(horizontal = 15.dp)
             ){
@@ -303,7 +306,7 @@ fun Form(username: String, onUsernameChanged: (String) -> Unit){
                         .padding(start = 24.dp, top = 14.dp)
                 )
 
-                if (email.isEmpty()) {
+                if (password.isEmpty()) {
                     Text(
                         text = "Enter your password",
                         color = Color.Gray,
@@ -465,11 +468,16 @@ fun performSignUp(
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener(context) { task ->
             if (task.isSuccessful) {
+                val uid = auth.currentUser?.uid
+                // Save additional user details to Firestore
+                saveUserDetailsToFirestore(uid, usernameTxt, email)
+
+                // Start the ProfileSetUp activity
                 val intent = Intent(context, ProfileSetUp::class.java)
                 context.startActivity(intent)
+
                 Toast.makeText(context, "Successfully sign up", Toast.LENGTH_SHORT).show()
                 onSuccess() // Call the success callback
-
             } else {
                 Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
             }
@@ -477,4 +485,22 @@ fun performSignUp(
         .addOnFailureListener {
             Toast.makeText(context, "Error Occurred ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
+}
+
+fun saveUserDetailsToFirestore(uid: String?, username: String, email: String) {
+    if (uid != null) {
+        val db = FirebaseFirestore.getInstance()
+        val userDocRef = db.collection("users").document(uid)
+        userDocRef.set(
+            mapOf(
+                "username" to username,
+                "email" to email,
+                // Add other user details as needed
+            )
+        ).addOnSuccessListener {
+            // Handle success
+        }.addOnFailureListener {
+            // Handle failure
+        }
+    }
 }

@@ -39,8 +39,11 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.login.LoginActivity
+import com.example.instachatcompose.ui.activities.login.LoginPage
+import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
 import com.example.instachatcompose.ui.activities.signup.SignUpActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class JoinActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,14 +55,25 @@ class JoinActivity: ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Column(modifier= Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())) {
-                        JoinPage()
+                    Column(modifier= Modifier.fillMaxSize()) {
+//                        if (checkIfUserIsLoggedIn()) {
+//                            // User is already logged in, navigate to MessageActivity
+//                            val intent = Intent(this@JoinActivity, MessageActivity::class.java)
+//                            startActivity(intent)
+//                            finish() // Finish LoginActivity to prevent going back to it on back press
+//                        } else {
+                            JoinPage()
+//                        }
                     }
                 }
             }
         }
+    }
+
+    private fun checkIfUserIsLoggedIn(): Boolean {
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
+        return currentUser != null
     }
 }
 

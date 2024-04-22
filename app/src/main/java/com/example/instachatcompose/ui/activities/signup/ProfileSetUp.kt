@@ -1,6 +1,7 @@
 package com.example.instachatcompose.ui.activities.signup
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -73,6 +74,7 @@ class ProfileSetUp: ComponentActivity() {
                 }
             }
         }
+
     }
 }
 
@@ -92,7 +94,7 @@ fun ProfileSetUpPage(onBackPressed: () -> Unit){
         }
     }
 
-    }
+}
 
 
 @Composable
@@ -136,6 +138,8 @@ fun ProfileSetUpProgress(onBackPressed: () -> Unit){
 @Composable
 fun ProfileFill(username: String, bio: String){
     val context= LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("UserProfile", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
     val  noPfp= painterResource(id = R.drawable.nopfp)
     val addPfp= painterResource(id = R.drawable.addpfp)
     val defaultCam= painterResource(id = R.drawable.nopfpcam)
@@ -316,10 +320,13 @@ fun ProfileFill(username: String, bio: String){
     GetStarted(
         onClick = {
             val intent = Intent(context, MessageActivity::class.java)
-            intent.putExtra("username", username)
+            intent.putExtra("username",username)
+            intent.putExtra("profileUri", selectedImageUri?.toString() ?: "")
             intent.putExtra("bio", bio)
+//            editor.apply()
             context.startActivity(intent)
-        })
+        }
+    )
 
 }
 

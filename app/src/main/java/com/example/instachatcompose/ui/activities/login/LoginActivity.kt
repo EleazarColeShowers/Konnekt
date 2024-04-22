@@ -1,5 +1,6 @@
 package com.example.instachatcompose.ui.activities.login
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -22,10 +23,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
 import com.example.instachatcompose.ui.activities.signup.ContinueBtn
@@ -55,6 +60,7 @@ import com.example.instachatcompose.ui.activities.signup.TermsAndConditions
 import com.example.instachatcompose.ui.activities.signup.performSignUp
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +80,7 @@ class LoginActivity : ComponentActivity() {
                 }
             }
         }
+
     }
 }
 
@@ -87,9 +94,7 @@ fun LoginPage(onBackPressed: () -> Unit){
         ReturnHome(onBackPressed ={
             onBackPressed()
         } )
-        LoginForm(username = username){
-            username = it
-        }
+        LoginForm()
 
     }
 }
@@ -115,14 +120,17 @@ fun ReturnHome(onBackPressed: () -> Unit){
 }
 
 @Composable
-fun LoginForm(username: String, onUsernameChanged: (String) -> Unit){
+fun LoginForm(){
     val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("UserProfile", Context.MODE_PRIVATE)
+    val username = sharedPreferences.getString("username", "DefaultUsername")
+    val profileUri = sharedPreferences.getString("profileUri", "DefaultProfileUri")
     val auth = FirebaseAuth.getInstance()
     var isChecked by remember { mutableStateOf(false) }
 
-    var username by remember {
-        mutableStateOf("")
-    }
+//    var username by remember {
+//        mutableStateOf("")
+//    }
     var email by remember {
         mutableStateOf("")
     }
@@ -244,7 +252,7 @@ fun LoginForm(username: String, onUsernameChanged: (String) -> Unit){
                         .padding(start = 24.dp, top = 14.dp)
                 )
 
-                if (email.isEmpty()) {
+                if (password.isEmpty()) {
                     Text(
                         text = "Enter your password",
                         color = Color.Gray,
@@ -280,6 +288,7 @@ fun LoginForm(username: String, onUsernameChanged: (String) -> Unit){
                 performLogin(auth, context as ComponentActivity, email, password, onSuccess = {
                     val intent = Intent(context, MessageActivity::class.java)
                     intent.putExtra("username", username)
+                    intent.putExtra("profileUri", profileUri)
                     context.startActivity(intent)
                 })
 
@@ -321,6 +330,7 @@ fun performLogin(
             Toast.makeText(context, "Error Occurred ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
 }
+
 
 @Composable
 fun LoginBtn(

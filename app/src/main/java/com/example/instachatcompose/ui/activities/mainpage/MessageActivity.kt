@@ -85,7 +85,7 @@ fun MessagePage() {
             modifier = Modifier
                 .align(Alignment.BottomCenter) // Aligns the Box at the bottom
                 .fillMaxWidth() // The BottomAppBar spans the full width
-                .height(60.dp)  // Desired height
+                .height(80.dp)  // Desired height
         ) {
             BottomAppBar() // Place your bottom bar here
         }
@@ -272,16 +272,77 @@ fun MessageFrag(username: String){
 
 @Composable
 fun BottomAppBar(){
+    val messagesPage= painterResource(id = R.drawable.bottombar_messagespage)
+    val callsPage= painterResource(id = R.drawable.bottombar_callspage)
+    val addFriendsPage= painterResource(id = R.drawable.bottombar_addfriendspage)
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .background(Color.White) // Set the background color
             .padding(16.dp),  // Adjust padding for spacing
 
         horizontalArrangement = Arrangement.SpaceBetween // Ensure items are spaced evenly
     ) {
-        Text("Home")   // Example items in the bottom bar
-        Text("Messages")
-        Text("Profile")
+        Column(
+            modifier = Modifier
+                .width(68.dp)
+                .height(52.dp)
+        ) {
+            Image(
+                painter = messagesPage,
+                contentDescription = null,
+                modifier=Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Messages",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF2F9ECE),
+                ),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .width(68.dp)
+                .height(52.dp)
+        ) {
+            Image(
+                painter = callsPage,
+                contentDescription = null,
+                modifier=Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Call Logs",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF696969),
+                ),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .width(68.dp)
+                .height(52.dp)
+        ) {
+            Image(
+                painter = addFriendsPage,
+                contentDescription = null,
+                modifier=Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Add Friends",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF696969),
+                ),
+            )
+        }
     }
 }
 

@@ -269,6 +269,8 @@ fun LoginForm(){
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+
+        //TODO: 1. enable the function to actually save passwords
         Row {
             CustomCheckbox(checked = isChecked) { checked ->
                 isChecked = checked

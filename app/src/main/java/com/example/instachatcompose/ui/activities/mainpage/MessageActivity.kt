@@ -1,9 +1,7 @@
 package com.example.instachatcompose.ui.activities.mainpage
 
-import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -41,21 +39,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import coil.compose.ImagePainter
 import coil.compose.rememberImagePainter
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+
 
 class MessageActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,31 +67,42 @@ class MessageActivity: ComponentActivity() {
 }
 
 @Composable
-fun MessagePage(){
-    Column (
-        modifier= Modifier.padding(horizontal = 15.dp, )
-    ){
-        val activity = LocalContext.current as? ComponentActivity
-        val username: String = activity?.intent?.getStringExtra("username") ?: "DefaultUsername"
-        val bio: String = activity?.intent?.getStringExtra("bio") ?: "DefaultBio"
-        val profilePic: Uri = Uri.parse(activity?.intent?.getStringExtra("profileUri") ?: "")
+fun MessagePage() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 15.dp)
+        ) {
+            val activity = LocalContext.current as? ComponentActivity
+            val username: String = activity?.intent?.getStringExtra("username") ?: "DefaultUsername"
+            val bio: String = activity?.intent?.getStringExtra("bio") ?: "DefaultBio"
+            val profilePic: Uri = Uri.parse(activity?.intent?.getStringExtra("profileUri") ?: "")
 
-        User(username = username, bio = bio, profilePic = profilePic)
-        MessageFrag()
+            User(username = username, profilePic = profilePic)
+            MessageFrag(username = username)
+
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter) // Aligns the Box at the bottom
+                .fillMaxWidth() // The BottomAppBar spans the full width
+                .height(60.dp)  // Desired height
+        ) {
+            BottomAppBar() // Place your bottom bar here
+        }
     }
 }
 
+
 @Composable
-fun User(username: String, bio: String, profilePic: Uri){
+fun User(username: String,profilePic: Uri){
     val addFriend= painterResource(id = R.drawable.addfriendicon)
     val searchIcon= painterResource(id = R.drawable.searchicon)
-    val colorInt = 0x333333 shl 8 or 0x33
 
     var search by remember {
         mutableStateOf("")
     }
 
-    Column() {
+    Column{
     Row(
         modifier = Modifier
             .padding(top = 8.dp)
@@ -132,7 +133,7 @@ fun User(username: String, bio: String, profilePic: Uri){
             )
         }
 
-        Row() {
+        Row{
             Image(
                 painter = addFriend,
                 contentDescription = null,
@@ -225,33 +226,62 @@ fun User(username: String, bio: String, profilePic: Uri){
 }
 
 @Composable
-fun MessageFrag(){
-    val phoneLottieComposition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(
-            R.raw.phonetext
-        )
-    )
+fun MessageFrag(username: String){
 
-    val phoneProgress by animateLottieCompositionAsState(
-        composition = phoneLottieComposition,
-        iterations = LottieConstants.IterateForever,
-        isPlaying = true
-    )
+    val messageConnected= painterResource(id = R.drawable.messagechats)
 
     Column(
-        verticalArrangement = Arrangement.Center
+        modifier= Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Text("Hello")
-        LottieAnimation(
-            composition = phoneLottieComposition,
-            progress = phoneProgress,
+        Image(
+            painter = messageConnected,
+            contentDescription = null,
             modifier= Modifier
-                .width(300.dp)
-                .height(300.dp)
+                .width(160.95.dp)
+                .height(160.18.dp)
+            )
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Welcome, $username",
+            style = TextStyle(
+                fontSize = 18.sp,
+                fontWeight = FontWeight(600),
+                color = Color(0xFF2F9ECE),
+            ),
+
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "You don’t have any friend yet, click on the “+Add Friend” button above to add friends and start connecting",
+            style = TextStyle(
+                fontSize = 13.sp,
+                fontWeight = FontWeight(500),
+                color = Color(0xFF696969),
+            ),
+            modifier = Modifier.width(300.dp)
         )
 
     }
 
+}
+
+
+@Composable
+fun BottomAppBar(){
+    Row(
+        modifier = Modifier
+            .background(Color.White) // Set the background color
+            .padding(16.dp),  // Adjust padding for spacing
+
+        horizontalArrangement = Arrangement.SpaceBetween // Ensure items are spaced evenly
+    ) {
+        Text("Home")   // Example items in the bottom bar
+        Text("Messages")
+        Text("Profile")
+    }
 }
 

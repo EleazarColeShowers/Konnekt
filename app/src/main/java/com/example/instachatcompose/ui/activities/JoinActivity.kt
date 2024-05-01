@@ -55,7 +55,12 @@ class JoinActivity: ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Column(modifier= Modifier.fillMaxSize()) {
+                    Column(
+                        modifier= Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+
+                    ) {
 //                        if (checkIfUserIsLoggedIn()) {
 //                            // User is already logged in, navigate to MessageActivity
 //                            val intent = Intent(this@JoinActivity, MessageActivity::class.java)
@@ -87,7 +92,7 @@ fun JoinPage(){
             val intent = Intent(context, SignUpActivity::class.java)
             context.startActivity(intent)
         })
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         ExistingAccount()
     }
 }
@@ -114,7 +119,7 @@ fun AnimatedConnection(modifier: Modifier = Modifier) {
             progress = preloaderProgress,
             modifier = modifier
                 .width(400.dp)
-                .height(410.dp)
+                .height(400.dp)
         )
     }
 }
@@ -122,7 +127,7 @@ fun AnimatedConnection(modifier: Modifier = Modifier) {
 @Composable
 fun ConnectionWriteUp(){
     Column(modifier= Modifier
-        .height(300.dp)
+        .height(290.dp)
         .fillMaxWidth()
         .padding(horizontal = 10.dp)) {
         Text(
@@ -198,6 +203,6 @@ fun ExistingAccount() {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 100.dp)
+            .padding(horizontal = 80.dp)
     )
 }

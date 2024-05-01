@@ -2,11 +2,13 @@ package com.example.instachatcompose.ui.activities.mainpage
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -95,7 +98,7 @@ fun MessagePage() {
 
 @Composable
 fun User(username: String,profilePic: Uri){
-    val addFriend= painterResource(id = R.drawable.addfriendicon)
+    val settingsIcon= painterResource(id = R.drawable.settings)
     val searchIcon= painterResource(id = R.drawable.searchicon)
 
     var search by remember {
@@ -135,13 +138,13 @@ fun User(username: String,profilePic: Uri){
 
         Row{
             Image(
-                painter = addFriend,
+                painter = settingsIcon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "Add Friends",
+                text = "Settings",
                 style = TextStyle(
                     fontSize = 14.sp,
                     fontWeight = FontWeight(400),
@@ -245,6 +248,7 @@ fun MessageFrag(username: String){
                 .height(160.18.dp)
             )
         Spacer(modifier = Modifier.height(20.dp))
+//        TODO: 3. Username should appear when user logs in (already appears on sign up)
         Text(
             text = "Welcome, $username",
             style = TextStyle(
@@ -256,7 +260,7 @@ fun MessageFrag(username: String){
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "You don’t have any friend yet, click on the “+Add Friend” button above to add friends and start connecting",
+            text = "You don’t have any friend yet, click on the “Konnekt” button below to add friends and start connecting.",
             style = TextStyle(
                 fontSize = 13.sp,
                 fontWeight = FontWeight(500),
@@ -269,80 +273,80 @@ fun MessageFrag(username: String){
 
 }
 
+enum class BottomAppBarItem {
+    Messages,
+    Calls,
+    AddFriends
+}
 
 @Composable
-fun BottomAppBar(){
-    val messagesPage= painterResource(id = R.drawable.bottombar_messagespage)
-    val callsPage= painterResource(id = R.drawable.bottombar_callspage)
-    val addFriendsPage= painterResource(id = R.drawable.bottombar_addfriendspage)
+fun BottomAppBar() {
+    var activeItem by remember { mutableStateOf(BottomAppBarItem.Messages) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White) // Set the background color
-            .padding(16.dp),  // Adjust padding for spacing
-
-        horizontalArrangement = Arrangement.SpaceBetween // Ensure items are spaced evenly
+            .background(Color.White)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically // Align icons and text vertically
     ) {
-        Column(
-            modifier = Modifier
-                .width(68.dp)
-                .height(52.dp)
-        ) {
-            Image(
-                painter = messagesPage,
-                contentDescription = null,
-                modifier=Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Messages",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF2F9ECE),
-                ),
-            )
-        }
-        Column(
-            modifier = Modifier
-                .width(68.dp)
-                .height(52.dp)
-        ) {
-            Image(
-                painter = callsPage,
-                contentDescription = null,
-                modifier=Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Call Logs",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF696969),
-                ),
-            )
-        }
-        Column(
-            modifier = Modifier
-                .width(68.dp)
-                .height(52.dp)
-        ) {
-            Image(
-                painter = addFriendsPage,
-                contentDescription = null,
-                modifier=Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Add Friends",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF696969),
-                ),
-            )
-        }
+        BottomAppBarItem(
+            label = "Messages",
+            isActive = activeItem == BottomAppBarItem.Messages,
+            activeIcon = R.drawable.bottombar_activemessagespage,
+            passiveIcon = R.drawable.bottombar_passivemessagespage,
+            onClick = { activeItem = BottomAppBarItem.Messages }
+        )
+
+        BottomAppBarItem(
+            label = "Call Logs",
+            isActive = activeItem == BottomAppBarItem.Calls,
+            activeIcon = R.drawable.bottombar_activecallspage,
+            passiveIcon = R.drawable.bottombar_passivecallspage,
+            onClick = { activeItem = BottomAppBarItem.Calls }
+        )
+
+        BottomAppBarItem(
+            label = "Konnekt",
+            isActive = activeItem == BottomAppBarItem.AddFriends,
+            activeIcon = R.drawable.bottombar_activeaddfriendspage,
+            passiveIcon = R.drawable.bottombar_passiveaddfriendspage,
+            onClick = { activeItem = BottomAppBarItem.AddFriends }
+        )
+    }
+}
+
+@Composable
+fun BottomAppBarItem(
+    label: String,
+    isActive: Boolean,
+    activeIcon: Int,
+    passiveIcon: Int,
+    onClick: () -> Unit
+) {
+    Log.d("BottomAppBarItem", "Rendering item: $label, isActive: $isActive")
+
+    Column(
+        modifier = Modifier
+            .width(68.dp)
+            .height(52.dp)
+            .clickable(onClick = onClick),  // Make the item clickable
+        horizontalAlignment = Alignment.CenterHorizontally // Align content in the center
+    ) {
+        Image(
+            painter = painterResource(id = if (isActive) activeIcon else passiveIcon),
+            contentDescription = label,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = if (isActive) Color(0xFF2F9ECE) else Color(0xFF696969) // Change text color based on active/passive state
+        )
     }
 }
 

@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -50,10 +52,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
 import coil.compose.rememberAsyncImagePainter
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.database
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 
 @Suppress("DEPRECATION")
 class ProfileSetUp: ComponentActivity() {
@@ -138,8 +146,6 @@ fun ProfileSetUpProgress(onBackPressed: () -> Unit){
 @Composable
 fun ProfileFill(username: String, bio: String){
     val context= LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserProfile", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
     val  noPfp= painterResource(id = R.drawable.nopfp)
     val addPfp= painterResource(id = R.drawable.addpfp)
     val defaultCam= painterResource(id = R.drawable.nopfpcam)
@@ -151,9 +157,6 @@ fun ProfileFill(username: String, bio: String){
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        // Handle the selected image URI
-        // You can perform any further processing with the selected image URI
-        // For now, you can print the URI to the log
         uri?.let { selectedUri ->
             selectedImageUri = selectedUri
         }
@@ -319,12 +322,25 @@ fun ProfileFill(username: String, bio: String){
     Spacer(modifier = Modifier.height(28.dp))
     GetStarted(
         onClick = {
-            val intent = Intent(context, MessageActivity::class.java)
-            intent.putExtra("username",username)
-            intent.putExtra("profileUri", selectedImageUri?.toString() ?: "")
-            intent.putExtra("bio", bio)
-//            editor.apply()
-            context.startActivity(intent)
+
+            if (selectedImageUri != null) {
+                // Upload the profile image
+                uploadProfileImageToFirebaseStorage(
+                    imageUri = selectedImageUri!!,
+                    onSuccess = { downloadUrl ->
+                        // Update the user's profile in the database
+                        updateUserProfileInDatabase(username, downloadUrl)
+                        val intent = Intent(context, MessageActivity::class.java)
+                        intent.putExtra("username",username)
+                        intent.putExtra("profileUri", selectedImageUri?.toString() ?: "")
+                        intent.putExtra("bio", bio)
+                        context.startActivity(intent)
+                    },
+                    onFailure = { exception ->
+                        Toast.makeText(context,"Failed to upload image: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     )
 
@@ -361,4 +377,44 @@ fun GetStarted(
         }
     }
 
+}
+
+fun uploadProfileImageToFirebaseStorage(
+    imageUri: Uri,
+    onSuccess: (String) -> Unit,
+    onFailure: (Exception) -> Unit
+) {
+
+    val storage: FirebaseStorage = FirebaseStorage.getInstance()
+    val storageRef: StorageReference = storage.reference
+    val userUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    val profileImageRef = storageRef.child("profile_images/$userUid/profile_image.jpg")
+
+    val uploadTask = profileImageRef.putFile(imageUri)
+    uploadTask.addOnSuccessListener {
+        // Get the download URL to store in the Realtime Database
+        profileImageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+            onSuccess(downloadUrl.toString()) // Call the success callback with the download URL
+        }
+    }.addOnFailureListener { exception ->
+        onFailure(exception) // Handle the failure
+    }
+}
+
+fun updateUserProfileInDatabase(username: String, profileImageUri: String) {
+    val userUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    val database = Firebase.database.reference
+
+    // Create a map of user data
+    val userData = mapOf(
+        "username" to username,
+        "profileImageUri" to profileImageUri
+    )
+
+    // Save the data to the Realtime Database
+    database.child("users").child(userUid).updateChildren(userData).addOnSuccessListener {
+        Log.d("###", "User profile updated")
+    }.addOnFailureListener { exception ->
+        Log.d("###", "Failed to update user profile: ${exception.message}")
+    }
 }

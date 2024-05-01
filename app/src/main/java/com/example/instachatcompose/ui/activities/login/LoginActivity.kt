@@ -1,8 +1,11 @@
 package com.example.instachatcompose.ui.activities.login
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,13 +26,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,18 +49,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
 import com.example.instachatcompose.R
+import com.example.instachatcompose.ui.activities.data.SecureStorage
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
-import com.example.instachatcompose.ui.activities.signup.ContinueBtn
 import com.example.instachatcompose.ui.activities.signup.CustomCheckbox
-import com.example.instachatcompose.ui.activities.signup.ProfileSetUp
 import com.example.instachatcompose.ui.activities.signup.SignUpActivity
-import com.example.instachatcompose.ui.activities.signup.TermsAndConditions
-import com.example.instachatcompose.ui.activities.signup.performSignUp
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -127,6 +132,8 @@ fun LoginForm(){
     val profileUri = sharedPreferences.getString("profileUri", "DefaultProfileUri")
     val auth = FirebaseAuth.getInstance()
     var isChecked by remember { mutableStateOf(false) }
+    val (savedEmail, savedPassword) = SecureStorage.getUserCredentials(context)
+
 
 //    var username by remember {
 //        mutableStateOf("")
@@ -218,7 +225,7 @@ fun LoginForm(){
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
+//TODO: 4. Enable function to toggle password visibility
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
             horizontalAlignment = Alignment.Start,
@@ -287,13 +294,22 @@ fun LoginForm(){
         LoginBtn(
             isChecked = isChecked,
             onClick = {
-                performLogin(auth, context as ComponentActivity, email, password, onSuccess = {
+                if (isChecked) {
+                    // Save credentials using the utility class
+                    SecureStorage.saveUserCredentials(context, email, password)
+                } else{
+                    Log.e(TAG,"did not save credentials")
+                }
+
+                performLogin(auth, context as ComponentActivity, email, password, onSuccess = {  username, profileImageUri ->
                     val intent = Intent(context, MessageActivity::class.java)
                     intent.putExtra("username", username)
-                    intent.putExtra("profileUri", profileUri)
+                    intent.putExtra("profileUri", profileImageUri)
                     context.startActivity(intent)
-                })
+                },
 
+//                    onFailure =)
+            )
             },
             onUnchecked = { /* Handle unchecked state */ }
         )
@@ -308,7 +324,7 @@ fun performLogin(
     context: ComponentActivity,
     email: String,
     password: String,
-    onSuccess: () -> Unit
+    onSuccess: (String, Uri?) -> Unit,  // Accept a callback with user ID and optional URI
 ) {
     if (email.isEmpty() || password.isEmpty()) {
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -319,7 +335,16 @@ fun performLogin(
         .addOnCompleteListener(context) { task ->
             if (task.isSuccessful) {
                 // Call the success callback before any further actions
-                onSuccess()
+                val user = auth.currentUser
+                if (user != null) {
+                    val userId = user.uid
+//                    onSuccess(userId)
+                    fetchUserProfile(  // Fetch user data upon successful login
+                        userId,
+                        onSuccess,
+                    )
+//                    fetchUserData(userId,onSuccess, onFailure = ) // Retrieve user data with userId
+                }
 
                 // You can perform additional actions after successful login if needed
 
@@ -333,7 +358,33 @@ fun performLogin(
         }
 }
 
+fun fetchUserProfile(
+    userId: String,
+    onSuccess: (String, Uri?) -> Unit,  // Success callback with username and optional URI
+//    onFailure: (Exception) -> Unit  // Failure callback for error handling
+) {
+    val database = FirebaseDatabase.getInstance().reference
+    val userRef = database.child("users").child(userId)
 
+    userRef.get().addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            val snapshot = task.result
+            if (snapshot.exists()) {
+                val username = snapshot.child("username").getValue(String::class.java) ?: ""
+                val profileImageUriString = snapshot.child("profileImageUri").getValue(String::class.java)
+                val profileImageUri = profileImageUriString?.let { Uri.parse(it) }
+
+                onSuccess(username, profileImageUri)  // Callback with data
+            } else {
+//                onFailure(Exception("User data not found"))  // Handle no data case
+            }
+        } else {
+//            task.exception?.let { onFailure(it) }  // Handle retrieval failure
+        }
+    }
+}
+
+// TODO: 2. write function for user to stay logged in
 @Composable
 fun LoginBtn(
     isChecked: Boolean,
@@ -407,3 +458,4 @@ fun SignUpText() {
             .padding(horizontal = 80.dp)
     )
 }
+

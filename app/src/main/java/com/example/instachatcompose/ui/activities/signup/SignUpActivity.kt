@@ -1,8 +1,8 @@
 package com.example.instachatcompose.ui.activities.signup
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -53,10 +53,15 @@ import androidx.compose.ui.unit.sp
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
 
 @Suppress("DEPRECATION")
 class SignUpActivity: ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -272,7 +277,7 @@ fun Form(username: String, onUsernameChanged: (String) -> Unit){
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
+//TODO: 4.1. Enable function to toggle password visibility
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
             horizontalAlignment = Alignment.Start,
@@ -452,25 +457,18 @@ fun ContinueBtn(
     }
 }
 
-fun performSignUp(
-    auth: FirebaseAuth,
-    context: ComponentActivity,
-    email: String,
-    password: String,
-    usernameTxt: String,
-    onSuccess: () -> Unit
-) {
+fun performSignUp(auth: FirebaseAuth, context: ComponentActivity, email: String, password: String, usernameTxt: String, onSuccess: () -> Unit) {
     if (email.isEmpty() || password.isEmpty() || usernameTxt.isEmpty()) {
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
         return
     }
 
-    auth.createUserWithEmailAndPassword(email, password)
-        .addOnCompleteListener(context) { task ->
+    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(context) { task ->
             if (task.isSuccessful) {
-                val uid = auth.currentUser?.uid
-                // Save additional user details to Firestore
-                saveUserDetailsToFirestore(uid, usernameTxt, email)
+                createUser(username= usernameTxt)
+//                val uid = auth.currentUser?.uid
+//                // Save additional user details to Firestore
+//                createUser(username = String)
 
                 // Start the ProfileSetUp activity
                 val intent = Intent(context, ProfileSetUp::class.java)
@@ -487,20 +485,14 @@ fun performSignUp(
         }
 }
 
-fun saveUserDetailsToFirestore(uid: String?, username: String, email: String) {
-    if (uid != null) {
-        val db = FirebaseFirestore.getInstance()
-        val userDocRef = db.collection("users").document(uid)
-        userDocRef.set(
-            mapOf(
-                "username" to username,
-                "email" to email,
-                // Add other user details as needed
-            )
-        ).addOnSuccessListener {
-            // Handle success
+fun createUser(username: String) {
+    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    val currentUser = firebaseAuth.currentUser
+    val database: DatabaseReference = Firebase.database.reference
+
+    database.child("users").child(currentUser?.uid.toString()).setValue(username).addOnSuccessListener {
+            Log.d("###","data saved ")
         }.addOnFailureListener {
-            // Handle failure
+            Log.d("###","data failed ${it.message}")
         }
-    }
 }

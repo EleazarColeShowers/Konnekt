@@ -1,7 +1,6 @@
 package com.example.instachatcompose.ui.activities.login
 
 import android.content.ContentValues.TAG
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -34,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,18 +53,11 @@ import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
 import com.example.instachatcompose.ui.activities.signup.CustomCheckbox
 import com.example.instachatcompose.ui.activities.signup.SignUpActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
 
+
+@Suppress("DEPRECATION")
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,8 +82,6 @@ class LoginActivity : ComponentActivity() {
 
 @Composable
 fun LoginPage(onBackPressed: () -> Unit){
-    var username by rememberSaveable { mutableStateOf("") }
-
     Column (
         modifier= Modifier.padding(horizontal = 15.dp)
     ){
@@ -127,9 +116,7 @@ fun ReturnHome(onBackPressed: () -> Unit){
 @Composable
 fun LoginForm(){
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserProfile", Context.MODE_PRIVATE)
-    val username = sharedPreferences.getString("username", "DefaultUsername")
-    val profileUri = sharedPreferences.getString("profileUri", "DefaultProfileUri")
+
     val auth = FirebaseAuth.getInstance()
     var isChecked by remember { mutableStateOf(false) }
     val (savedEmail, savedPassword) = SecureStorage.getUserCredentials(context)
@@ -319,6 +306,7 @@ fun LoginForm(){
     }
 }
 
+//TODO: On log in, only the username pops up and not the image due to the image being called differently in the message and profile setup page.
 fun performLogin(
     auth: FirebaseAuth,
     context: ComponentActivity,

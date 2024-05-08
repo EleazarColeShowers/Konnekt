@@ -1,4 +1,4 @@
-package com.example.instachatcompose.ui.activities.mainpage
+package com.example.instachatcompose.ui.activities.konnekt
 
 import android.content.Intent
 import android.net.Uri
@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,14 +44,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
 import coil.compose.ImagePainter
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.instachatcompose.R
-import com.example.instachatcompose.ui.activities.konnekt.Konnekt
+import com.example.instachatcompose.ui.activities.mainpage.BottomAppBar
+import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
+import com.example.instachatcompose.ui.activities.mainpage.MessageFrag
+import com.example.instachatcompose.ui.activities.mainpage.MessagePage
+import com.example.instachatcompose.ui.activities.mainpage.User
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
 
-
-class MessageActivity: ComponentActivity() {
+class Konnekt: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -63,7 +67,7 @@ class MessageActivity: ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Column(modifier= Modifier.fillMaxSize()) {
-                        MessagePage()
+                        AddFriendsPage()
                     }
                 }
             }
@@ -72,7 +76,7 @@ class MessageActivity: ComponentActivity() {
 }
 
 @Composable
-fun MessagePage() {
+fun AddFriendsPage()  {
     Box(modifier = Modifier.fillMaxSize()) {
         val activity = LocalContext.current as? ComponentActivity
         val username: String = activity?.intent?.getStringExtra("username") ?: "DefaultUsername"
@@ -83,7 +87,7 @@ fun MessagePage() {
             modifier = Modifier.padding(horizontal = 15.dp)
         ) {
 
-            User(username = username, profilePic = profilePic)
+            UserAddFriends(username = username, profilePic = profilePic)
             MessageFrag(username = username)
 
         }
@@ -93,14 +97,15 @@ fun MessagePage() {
                 .fillMaxWidth() // The BottomAppBar spans the full width
                 .height(80.dp)  // Desired height
         ) {
-            BottomAppBar(username = username, profilePic = profilePic) // Place your bottom bar here
+            BottomAppBarKonnekt(username = username, profilePic = profilePic) // Place your bottom bar here
         }
     }
 }
 
 
+
 @Composable
-fun User(username: String,profilePic: Uri){
+fun UserAddFriends(username: String,profilePic: Uri){
     val settingsIcon= painterResource(id = R.drawable.settings)
     val searchIcon= painterResource(id = R.drawable.searchicon)
 
@@ -109,63 +114,63 @@ fun User(username: String,profilePic: Uri){
     }
 
     Column{
-    Row(
-        modifier = Modifier
-            .padding(top = 8.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row{
-            val imagePainter: ImagePainter = rememberImagePainter(data = profilePic)
-            Image(
-                painter = imagePainter,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(31.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.background)
-                    .scale(1.5f)
-            )
+        Row(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row{
+                val imagePainter: AsyncImagePainter = rememberAsyncImagePainter(model = profilePic)
+                Image(
+                    painter = imagePainter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(31.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.background)
+                        .scale(1.5f)
+                )
 
-            Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
-            Text(
-                text = username,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF696969),
-                ),
-            )
+                Text(
+                    text = username,
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight(400),
+                        color = Color(0xFF696969),
+                    ),
+                )
+            }
+
+            Row{
+                Image(
+                    painter = settingsIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Settings",
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight(400),
+                        color = Color(0xFF2F9ECE),
+                    ),
+                )
+            }
         }
-
-        Row{
-            Image(
-                painter = settingsIcon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text ="Add Friends",
+            style = TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight(500),
+                color = Color(0xFF000000),
             )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "Settings",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF2F9ECE),
-                ),
-            )
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    Text(
-        text ="Messages",
-        style = TextStyle(
-            fontSize = 24.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF000000),
         )
-    )
-    Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Box(
             modifier = Modifier
                 .border(
@@ -177,31 +182,31 @@ fun User(username: String,profilePic: Uri){
                 .width(444.dp)
         ) {
 
-               Image(
-                   painter = searchIcon,
-                   contentDescription = "Search",
-                   modifier = Modifier
-                       .size(35.dp)
-                       .padding(top = 15.dp),
-               )
+            Image(
+                painter = searchIcon,
+                contentDescription = "Search",
+                modifier = Modifier
+                    .size(35.dp)
+                    .padding(top = 15.dp),
+            )
             Spacer(modifier = Modifier.width(6.dp))
-               BasicTextField(
-                   value = search,
-                   onValueChange = { search = it },
-                   textStyle = LocalTextStyle.current.copy(color = Color.Black),
-                   singleLine = true,
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .padding(top = 14.dp, start = 27.dp)
-               )
+            BasicTextField(
+                value = search,
+                onValueChange = { search = it },
+                textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp, start = 27.dp)
+            )
 
-               if (search.isEmpty()) {
-                   Text(
-                       text = "Search",
-                       color = Color.Gray,
-                       modifier = Modifier.padding(start = 27.dp, top = 14.dp)
-                   )
-               }
+            if (search.isEmpty()) {
+                Text(
+                    text = "Find Friends",
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 27.dp, top = 14.dp)
+                )
+            }
         }
         Spacer(modifier = Modifier.height(20.dp))
         Row(
@@ -210,71 +215,27 @@ fun User(username: String,profilePic: Uri){
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-                Text(
-                    text = "Requests(10)",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF2F9ECE),
-                    ),
-                )
+            Text(
+                text = "Requests(10)",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF2F9ECE),
+                ),
+            )
 
-                Text(
-                    text = "Archives(1)",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF2F9ECE),
-                    ),
-                )
+            Text(
+                text = "Archives(1)",
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF2F9ECE),
+                ),
+            )
         }
     }
 }
 
-@Composable
-fun MessageFrag(username: String){
-
-    val messageConnected= painterResource(id = R.drawable.messagechats)
-
-    Column(
-        modifier= Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-
-    ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Image(
-            painter = messageConnected,
-            contentDescription = null,
-            modifier= Modifier
-                .width(160.95.dp)
-                .height(160.18.dp)
-            )
-        Spacer(modifier = Modifier.height(20.dp))
-//        TODO: 3. Username should appear when user logs in (already appears on sign up)
-        Text(
-            text = "Welcome, $username",
-            style = TextStyle(
-                fontSize = 18.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF2F9ECE),
-            ),
-
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "You don’t have any friend yet, click on the “Konnekt” button below to add friends and start connecting.",
-            style = TextStyle(
-                fontSize = 13.sp,
-                fontWeight = FontWeight(500),
-                color = Color(0xFF696969),
-            ),
-            modifier = Modifier.width(300.dp)
-        )
-
-    }
-
-}
 
 enum class BottomAppBarItem {
     Messages,
@@ -283,8 +244,8 @@ enum class BottomAppBarItem {
 }
 
 @Composable
-fun BottomAppBar(username: String,profilePic: Uri) {
-    var activeItem by remember { mutableStateOf(BottomAppBarItem.Messages) }
+fun BottomAppBarKonnekt(username: String,profilePic: Uri) {
+    var activeItem by remember { mutableStateOf(BottomAppBarItem.AddFriends) }
     val context= LocalContext.current
 
 
@@ -296,7 +257,7 @@ fun BottomAppBar(username: String,profilePic: Uri) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically // Align icons and text vertically
     ) {
-        BottomAppBarItem(
+        BottomAppBarItemKonnekt(
             label = "Messages",
             isActive = activeItem == BottomAppBarItem.Messages,
             activeIcon = R.drawable.bottombar_activemessagespage,
@@ -304,11 +265,13 @@ fun BottomAppBar(username: String,profilePic: Uri) {
             onClick = {
                 activeItem = BottomAppBarItem.Messages
                 val intent = Intent(context, MessageActivity::class.java)
+                intent.putExtra("username", username)
+                intent.putExtra("profileUri", profilePic.toString())
                 context.startActivity(intent)
             }
         )
 
-        BottomAppBarItem(
+        BottomAppBarItemKonnekt(
             label = "Call Logs",
             isActive = activeItem == BottomAppBarItem.Calls,
             activeIcon = R.drawable.bottombar_activecallspage,
@@ -316,7 +279,7 @@ fun BottomAppBar(username: String,profilePic: Uri) {
             onClick = { activeItem = BottomAppBarItem.Calls }
         )
 
-        BottomAppBarItem(
+        BottomAppBarItemKonnekt(
             label = "Konnekt",
             isActive = activeItem == BottomAppBarItem.AddFriends,
             activeIcon = R.drawable.bottombar_activeaddfriendspage,
@@ -333,7 +296,7 @@ fun BottomAppBar(username: String,profilePic: Uri) {
 }
 
 @Composable
-fun BottomAppBarItem(
+fun BottomAppBarItemKonnekt(
     label: String,
     isActive: Boolean,
     activeIcon: Int,
@@ -364,4 +327,3 @@ fun BottomAppBarItem(
         )
     }
 }
-

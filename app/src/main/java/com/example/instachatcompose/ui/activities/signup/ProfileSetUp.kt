@@ -1,7 +1,6 @@
 package com.example.instachatcompose.ui.activities.signup
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
 import coil.compose.rememberAsyncImagePainter
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
@@ -317,12 +315,10 @@ fun ProfileFill(username: String, bio: String){
                     .align(Alignment.BottomEnd)
             )
         }
-
     }
     Spacer(modifier = Modifier.height(28.dp))
     GetStarted(
         onClick = {
-
             if (selectedImageUri != null) {
                 // Upload the profile image
                 uploadProfileImageToFirebaseStorage(
@@ -378,6 +374,7 @@ fun GetStarted(
     }
 
 }
+//TODO: save bio to real time database as well.
 
 fun uploadProfileImageToFirebaseStorage(
     imageUri: Uri,

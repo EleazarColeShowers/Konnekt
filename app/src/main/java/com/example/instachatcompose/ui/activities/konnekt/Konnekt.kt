@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,9 +30,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +58,8 @@ import com.example.instachatcompose.ui.activities.mainpage.MessageFrag
 import com.example.instachatcompose.ui.activities.mainpage.MessagePage
 import com.example.instachatcompose.ui.activities.mainpage.User
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 class Konnekt: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,7 +93,7 @@ fun AddFriendsPage()  {
         ) {
 
             UserAddFriends(username = username, profilePic = profilePic)
-            MessageFrag(username = username)
+//            MessageFrag(username = username)
 
         }
         Box(
@@ -109,9 +114,35 @@ fun UserAddFriends(username: String,profilePic: Uri){
     val settingsIcon= painterResource(id = R.drawable.settings)
     val searchIcon= painterResource(id = R.drawable.searchicon)
 
+    var searchResults by remember { mutableStateOf(listOf<String>()) }
+    val firestore = FirebaseFirestore.getInstance()
+    val scope = rememberCoroutineScope()
     var search by remember {
         mutableStateOf("")
     }
+//TODO: search database for email or username, on click search after the input field on the searchbar has been filled and pop out the user by username
+    LaunchedEffect(search) {
+        if (search.isNotEmpty()) {
+            scope.launch {
+                firestore.collection("users")
+                    .whereIn("username", listOf(search))
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        val results = querySnapshot.documents.mapNotNull { doc ->
+                            doc.getString("username")
+                        }
+                        searchResults = results
+                    }
+                    .addOnFailureListener {
+                        // Handle failure
+                        searchResults = listOf() // Empty list on failure
+                    }
+            }
+        } else {
+            searchResults = emptyList() // Reset results when search is empty
+        }
+    }
+
 
     Column{
         Row(
@@ -208,30 +239,35 @@ fun UserAddFriends(username: String,profilePic: Uri){
                 )
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Requests(10)",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF2F9ECE),
-                ),
-            )
+        Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "Archives(1)",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF2F9ECE),
-                ),
-            )
+        LazyColumn {
+            if (searchResults.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No results found")
+                    }
+                }
+            } else {
+                searchResults.forEach { username ->
+                    item {
+                        Text(
+                            text = username,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .clickable {
+                                    // Handle click (e.g., open profile, send friend request)
+                                }
+                        )
+                    }
+                }
+            }
         }
     }
 }

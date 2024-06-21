@@ -127,7 +127,7 @@ fun AnimatedConnection(modifier: Modifier = Modifier) {
 @Composable
 fun ConnectionWriteUp(){
     Column(modifier= Modifier
-        .height(290.dp)
+        .height(240.dp)
         .fillMaxWidth()
         .padding(horizontal = 10.dp)) {
         Text(

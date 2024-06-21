@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,11 +31,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,18 +47,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImagePainter
-import coil.compose.ImagePainter
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.instachatcompose.R
-import com.example.instachatcompose.ui.activities.mainpage.BottomAppBar
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
-import com.example.instachatcompose.ui.activities.mainpage.MessageFrag
-import com.example.instachatcompose.ui.activities.mainpage.MessagePage
-import com.example.instachatcompose.ui.activities.mainpage.User
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.launch
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class Konnekt: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,48 +105,58 @@ fun AddFriendsPage()  {
 
 
 @Composable
-fun UserAddFriends(username: String,profilePic: Uri){
-    val settingsIcon= painterResource(id = R.drawable.settings)
-    val searchIcon= painterResource(id = R.drawable.searchicon)
+fun UserAddFriends(username: String, profilePic: Uri) {
+    val settingsIcon = painterResource(id = R.drawable.settings)
+    val searchIcon = painterResource(id = R.drawable.searchicon)
 
-    var searchResults by remember { mutableStateOf(listOf<String>()) }
-    val firestore = FirebaseFirestore.getInstance()
-    val scope = rememberCoroutineScope()
-    var search by remember {
-        mutableStateOf("")
-    }
-//TODO: search database for email or username, on click search after the input field on the searchbar has been filled and pop out the user by username
-    LaunchedEffect(search) {
-        if (search.isNotEmpty()) {
-            scope.launch {
-                firestore.collection("users")
-                    .whereIn("username", listOf(search))
-                    .get()
-                    .addOnSuccessListener { querySnapshot ->
-                        val results = querySnapshot.documents.mapNotNull { doc ->
-                            doc.getString("username")
+    var searchResults by remember { mutableStateOf(listOf<Map<String, Any>>()) }
+    val database = FirebaseDatabase.getInstance().getReference("users")
+    var search by remember { mutableStateOf("") }
+    var searchPerformed by remember { mutableStateOf(false) }
+
+    // Search function
+    fun performSearch(query: String) {
+        if (query.isNotEmpty()) {
+            database.orderByChild("username").equalTo(query)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        Log.d("FirebaseSearch", "DataSnapshot: ${dataSnapshot.value}")
+                        val results = dataSnapshot.children.mapNotNull { snapshot ->
+                            val userMap = snapshot.value as? Map<String, Any>
+                            userMap?.let {
+                                val profileImageUri = it["profileImageUri"] as? String ?: ""
+                                Log.d("FirebaseSearch", "ProfileImageUri: $profileImageUri")
+                                mapOf(
+                                    "username" to (it["username"] as? String ?: ""),
+                                    "email" to (it["email"] as? String ?: ""),
+                                    "profileImageUri" to (it["profileImageUri"] as? String ?: "")
+                                )
+                            }
+
                         }
                         searchResults = results
+                        searchPerformed = true
                     }
-                    .addOnFailureListener {
-                        // Handle failure
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Log.e("FirebaseSearch", "Error fetching data", databaseError.toException())
                         searchResults = listOf() // Empty list on failure
+                        searchPerformed = true
                     }
-            }
+                })
         } else {
-            searchResults = emptyList() // Reset results when search is empty
+            searchResults = listOf()
+            searchPerformed = false
         }
     }
-
-
-    Column{
+    Column {
         Row(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row{
+            Row {
                 val imagePainter: AsyncImagePainter = rememberAsyncImagePainter(model = profilePic)
                 Image(
                     painter = imagePainter,
@@ -175,7 +180,7 @@ fun UserAddFriends(username: String,profilePic: Uri){
                 )
             }
 
-            Row{
+            Row {
                 Image(
                     painter = settingsIcon,
                     contentDescription = null,
@@ -192,9 +197,10 @@ fun UserAddFriends(username: String,profilePic: Uri){
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text ="Add Friends",
+            text = "Add Friends",
             style = TextStyle(
                 fontSize = 24.sp,
                 fontWeight = FontWeight(500),
@@ -202,6 +208,7 @@ fun UserAddFriends(username: String,profilePic: Uri){
             )
         )
         Spacer(modifier = Modifier.height(10.dp))
+
         Box(
             modifier = Modifier
                 .border(
@@ -212,37 +219,47 @@ fun UserAddFriends(username: String,profilePic: Uri){
                 .height(48.dp)
                 .width(444.dp)
         ) {
-
-            Image(
-                painter = searchIcon,
-                contentDescription = "Search",
-                modifier = Modifier
-                    .size(35.dp)
-                    .padding(top = 15.dp),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            BasicTextField(
-                value = search,
-                onValueChange = { search = it },
-                textStyle = LocalTextStyle.current.copy(color = Color.Black),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp, start = 27.dp)
-            )
-
-            if (search.isEmpty()) {
-                Text(
-                    text = "Find Friends",
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start = 27.dp, top = 14.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = searchIcon,
+                    contentDescription = "Search",
+                    modifier = Modifier
+                        .size(35.dp)
+                        .padding(start = 8.dp)
                 )
+
+                BasicTextField(
+                    value = search,
+                    onValueChange = {
+                        search = it
+                        performSearch(it)
+                    },
+                    textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+
+                if (search.isEmpty()) {
+                    Text(
+                        text = "Find Friends",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
+
         Spacer(modifier = Modifier.height(10.dp))
 
+
         LazyColumn {
-            if (searchResults.isEmpty()) {
+            if (!searchPerformed) {
+                // Show nothing before search is performed
+            } else if (searchResults.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -254,17 +271,35 @@ fun UserAddFriends(username: String,profilePic: Uri){
                     }
                 }
             } else {
-                searchResults.forEach { username ->
-                    item {
-                        Text(
-                            text = username,
+                items(searchResults) { result ->
+                    val username = result["username"] as? String ?: ""
+                    val email = result["email"] as? String ?: ""
+                    val profileImageUri = result["profileImageUri"] as? String ?: ""
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .clickable {
+                                // Handle click (e.g., open profile, send friend request)
+                            }
+                    ) {
+                        val painter = rememberAsyncImagePainter(model = profileImageUri)
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
                             modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    // Handle click (e.g., open profile, send friend request)
-                                }
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.background)
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Column {
+                            Text(text = username, fontWeight = FontWeight.Bold)
+                            Text(text = email, color = Color.Gray)
+                        }
                     }
                 }
             }

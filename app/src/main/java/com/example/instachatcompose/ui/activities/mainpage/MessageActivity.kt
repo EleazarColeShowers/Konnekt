@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,6 +46,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import coil.compose.ImagePainter
 import coil.compose.rememberImagePainter
 import com.example.instachatcompose.R
@@ -84,7 +89,12 @@ fun MessagePage() {
         ) {
 
             User(username = username, profilePic = profilePic)
-            MessageFrag(username = username)
+            val navController = rememberNavController()
+            NavHost(navController, startDestination = "home" ){
+                composable("home"){ MessageFrag(username = username, navController)}
+                composable("detail") { TextFrag() }
+            }
+
 
         }
         Box(
@@ -232,7 +242,7 @@ fun User(username: String,profilePic: Uri){
 }
 
 @Composable
-fun MessageFrag(username: String){
+fun MessageFrag(username: String, navController: NavController){
 
     val messageConnected= painterResource(id = R.drawable.messagechats)
 
@@ -272,8 +282,21 @@ fun MessageFrag(username: String){
             modifier = Modifier.width(300.dp)
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = {
+            // Navigate to Detail Screen within the same activity
+            navController.navigate("detail")
+        }) {
+            Text("Go to Detail Screen")
+        }
+
     }
 
+}
+
+@Composable
+fun TextFrag(){
+    Text(text = "Hello")
 }
 
 enum class BottomAppBarItem {

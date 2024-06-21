@@ -113,42 +113,83 @@ fun UserAddFriends(username: String, profilePic: Uri) {
     val database = FirebaseDatabase.getInstance().getReference("users")
     var search by remember { mutableStateOf("") }
     var searchPerformed by remember { mutableStateOf(false) }
+    var allUsers by remember { mutableStateOf(listOf<Map<String, Any>>()) }
 
     // Search function
+//    fun performSearch(query: String) {
+//        if (query.isNotEmpty()) {
+//            database.orderByChild("username").equalTo(query)
+//                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+//                        Log.d("FirebaseSearch", "DataSnapshot: ${dataSnapshot.value}")
+//                        val results = dataSnapshot.children.mapNotNull { snapshot ->
+//                            val userMap = snapshot.value as? Map<String, Any>
+//                            userMap?.let {
+//                                val profileImageUri = it["profileImageUri"] as? String ?: ""
+//                                Log.d("FirebaseSearch", "ProfileImageUri: $profileImageUri")
+//                                mapOf(
+//                                    "username" to (it["username"] as? String ?: ""),
+//                                    "email" to (it["email"] as? String ?: ""),
+//                                    "profileImageUri" to (it["profileImageUri"] as? String ?: "")
+//                                )
+//                            }
+//
+//                        }
+//                        searchResults = results
+//                        searchPerformed = true
+//                    }
+//
+//                    override fun onCancelled(databaseError: DatabaseError) {
+//                        Log.e("FirebaseSearch", "Error fetching data", databaseError.toException())
+//                        searchResults = listOf() // Empty list on failure
+//                        searchPerformed = true
+//                    }
+//                })
+//        } else {
+//            searchResults = listOf()
+//            searchPerformed = false
+//        }
+//    }
+
     fun performSearch(query: String) {
         if (query.isNotEmpty()) {
-            database.orderByChild("username").equalTo(query)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        Log.d("FirebaseSearch", "DataSnapshot: ${dataSnapshot.value}")
-                        val results = dataSnapshot.children.mapNotNull { snapshot ->
-                            val userMap = snapshot.value as? Map<String, Any>
-                            userMap?.let {
-                                val profileImageUri = it["profileImageUri"] as? String ?: ""
-                                Log.d("FirebaseSearch", "ProfileImageUri: $profileImageUri")
-                                mapOf(
-                                    "username" to (it["username"] as? String ?: ""),
-                                    "email" to (it["email"] as? String ?: ""),
-                                    "profileImageUri" to (it["profileImageUri"] as? String ?: "")
-                                )
-                            }
-
-                        }
-                        searchResults = results
-                        searchPerformed = true
-                    }
-
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        Log.e("FirebaseSearch", "Error fetching data", databaseError.toException())
-                        searchResults = listOf() // Empty list on failure
-                        searchPerformed = true
-                    }
-                })
+            searchResults = allUsers.filter {
+                val username = it["username"] as? String ?: ""
+                username.contains(query, ignoreCase = true)
+            }
+            searchPerformed = true
         } else {
             searchResults = listOf()
             searchPerformed = false
         }
     }
+
+    fun loadAllUsers() {
+        database.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val users = dataSnapshot.children.mapNotNull { snapshot ->
+                    val userMap = snapshot.value as? Map<String, Any>
+                    userMap?.let {
+                        mapOf(
+                            "username" to (it["username"] as? String ?: ""),
+                            "email" to (it["email"] as? String ?: ""),
+                            "profileImageUri" to (it["profileImageUri"] as? String ?: "")
+                        )
+                    }
+                }
+                allUsers = users
+                performSearch(search) // Filter results initially based on the current search
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.e("FirebaseSearch", "Error fetching data", databaseError.toException())
+            }
+        })
+    }
+
+
+    loadAllUsers()
+
     Column {
         Row(
             modifier = Modifier

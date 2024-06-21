@@ -1,3 +1,5 @@
+@file:Suppress("NAME_SHADOWING", "UNCHECKED_CAST")
+
 package com.example.instachatcompose.ui.activities.konnekt
 
 import android.content.Intent
@@ -115,41 +117,6 @@ fun UserAddFriends(username: String, profilePic: Uri) {
     var searchPerformed by remember { mutableStateOf(false) }
     var allUsers by remember { mutableStateOf(listOf<Map<String, Any>>()) }
 
-    // Search function
-//    fun performSearch(query: String) {
-//        if (query.isNotEmpty()) {
-//            database.orderByChild("username").equalTo(query)
-//                .addListenerForSingleValueEvent(object : ValueEventListener {
-//                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                        Log.d("FirebaseSearch", "DataSnapshot: ${dataSnapshot.value}")
-//                        val results = dataSnapshot.children.mapNotNull { snapshot ->
-//                            val userMap = snapshot.value as? Map<String, Any>
-//                            userMap?.let {
-//                                val profileImageUri = it["profileImageUri"] as? String ?: ""
-//                                Log.d("FirebaseSearch", "ProfileImageUri: $profileImageUri")
-//                                mapOf(
-//                                    "username" to (it["username"] as? String ?: ""),
-//                                    "email" to (it["email"] as? String ?: ""),
-//                                    "profileImageUri" to (it["profileImageUri"] as? String ?: "")
-//                                )
-//                            }
-//
-//                        }
-//                        searchResults = results
-//                        searchPerformed = true
-//                    }
-//
-//                    override fun onCancelled(databaseError: DatabaseError) {
-//                        Log.e("FirebaseSearch", "Error fetching data", databaseError.toException())
-//                        searchResults = listOf() // Empty list on failure
-//                        searchPerformed = true
-//                    }
-//                })
-//        } else {
-//            searchResults = listOf()
-//            searchPerformed = false
-//        }
-//    }
 
     fun performSearch(query: String) {
         if (query.isNotEmpty()) {
@@ -163,7 +130,6 @@ fun UserAddFriends(username: String, profilePic: Uri) {
             searchPerformed = false
         }
     }
-
     fun loadAllUsers() {
         database.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -248,8 +214,8 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                 color = Color(0xFF000000),
             )
         )
-        Spacer(modifier = Modifier.height(10.dp))
 
+        Spacer(modifier = Modifier.height(10.dp))
         Box(
             modifier = Modifier
                 .border(
@@ -323,24 +289,58 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                             .padding(8.dp)
                             .clickable {
                                 // Handle click (e.g., open profile, send friend request)
-                            }
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        val painter = rememberAsyncImagePainter(model = profileImageUri)
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.background)
-                        )
+                        Row(Modifier.width(160.dp)) {
 
-                        Spacer(modifier = Modifier.width(8.dp))
 
-                        Column {
-                            Text(text = username, fontWeight = FontWeight.Bold)
-                            Text(text = email, color = Color.Gray)
+                            val painter = rememberAsyncImagePainter(model = profileImageUri)
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.background)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Column {
+                                Text(text = username, fontWeight = FontWeight.Bold)
+                                Text(text = email, color = Color.Gray)
+                            }
                         }
+                        Spacer(modifier = Modifier.width(100.dp))
+                        val addFriend= painterResource(id = R.drawable.addfriends)
+                        Row(
+                            modifier = Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFF2F9ECE), // You can change the color as needed
+                                    shape = RoundedCornerShape(12.dp),
+                                    // You can change the shape as needed
+                                )
+                                .padding(8.dp) // Optional padding inside the border
+                        ){
+                            Image(
+                                painter = addFriend,
+                                contentDescription = null,
+                                modifier= Modifier.size(16.dp)
+                                )
+
+                            Text(
+                                text = "Add Account",
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight(400),
+                                    color = Color(0xFF2F9ECE),
+                                ),
+                            )
+
+                        }
+
                     }
                 }
             }

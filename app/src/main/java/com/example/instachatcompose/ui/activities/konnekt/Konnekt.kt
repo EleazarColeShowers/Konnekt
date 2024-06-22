@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.instachatcompose.R
 import com.example.instachatcompose.ui.activities.mainpage.MessageActivity
 import com.example.instachatcompose.ui.theme.InstaChatComposeTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -61,6 +64,7 @@ import com.google.firebase.database.ValueEventListener
 class Konnekt: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         setContent {
             InstaChatComposeTheme {
                 Surface(
@@ -68,7 +72,7 @@ class Konnekt: ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Column(modifier= Modifier.fillMaxSize()) {
-                        AddFriendsPage()
+                        AddFriendsPage(currentUserId = currentUserId)
                     }
                 }
             }
@@ -77,7 +81,7 @@ class Konnekt: ComponentActivity() {
 }
 
 @Composable
-fun AddFriendsPage()  {
+fun AddFriendsPage(currentUserId: String)  {
     Box(modifier = Modifier.fillMaxSize()) {
         val activity = LocalContext.current as? ComponentActivity
         val username: String = activity?.intent?.getStringExtra("username") ?: "DefaultUsername"
@@ -89,13 +93,15 @@ fun AddFriendsPage()  {
         ) {
 
             UserAddFriends(username = username, profilePic = profilePic)
+
+            UserReceivesRequest(currentUserId = currentUserId)
 //            MessageFrag(username = username)
 
         }
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter) 
-                .fillMaxWidth() 
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
                 .height(80.dp)  
         ) {
             BottomAppBarKonnekt(username = username, profilePic = profilePic) 
@@ -154,6 +160,32 @@ fun UserAddFriends(username: String, profilePic: Uri) {
 
 
     loadAllUsers()
+
+    fun sendFriendRequest(targetUsername: String) {
+        val database = FirebaseDatabase.getInstance().reference
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val currentUserId = currentUser?.uid
+
+        if (currentUserId != null) {
+            val friendRequest = mapOf(
+                "from" to currentUserId,
+                "to" to targetUsername,
+                "status" to "pending"
+            )
+
+            database.child("friend_requests").push().setValue(friendRequest)
+                .addOnSuccessListener {
+                    // Handle success (e.g., show a message to the user)
+                    Log.d("FriendRequest", "Friend request sent successfully")
+                }
+                .addOnFailureListener { exception ->
+                    // Handle failure
+                    Log.e("FriendRequest", "Error sending friend request", exception)
+                }
+        } else {
+            Log.e("FriendRequest", "User not logged in")
+        }
+    }
 
     Column {
         Row(
@@ -285,10 +317,7 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
-                            .clickable {
-                                // Handle click (e.g., open profile, send friend request)
-                            },
+                            .padding(8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(Modifier.width(160.dp)) {
@@ -313,13 +342,17 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                         }
                         val addFriend= painterResource(id = R.drawable.addfriends)
                         Row(
-                            modifier = Modifier.width(110.dp)
+                            modifier = Modifier
+                                .width(110.dp)
                                 .border(
                                     width = 1.dp,
-                                    color = Color(0xFF2F9ECE), 
+                                    color = Color(0xFF2F9ECE),
                                     shape = RoundedCornerShape(12.dp),
                                 )
-                                .padding(8.dp) 
+                                .padding(8.dp)
+                                .clickable {
+                                    sendFriendRequest(username)
+                                }
                         ){
                             Image(
                                 painter = addFriend,
@@ -345,6 +378,149 @@ fun UserAddFriends(username: String, profilePic: Uri) {
     }
 }
 
+data class FriendRequest(
+    val from: String = "",
+    val to: String = "",
+    val status: String = "pending"
+)
+
+fun listenForFriendRequests(currentUserId: String, onNewRequest: (FriendRequest) -> Unit) {
+    val database = FirebaseDatabase.getInstance().reference
+    val friendRequestsRef = database.child("friend_requests")
+
+    friendRequestsRef.orderByChild("to").equalTo(currentUserId)
+        .addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val friendRequest = dataSnapshot.getValue(FriendRequest::class.java)
+                friendRequest?.let { onNewRequest(it) }
+            }
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
+
+            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.e("FriendRequestListener", "Error listening for friend requests", databaseError.toException())
+            }
+        })
+}
+
+fun acceptFriendRequest(request: FriendRequest) {
+    val database = FirebaseDatabase.getInstance().reference
+    val friendRequestsRef = database.child("friend_requests").child(request.to)
+
+    // Update the status of the friend request
+    friendRequestsRef.child(request.from).child("status").setValue("accepted")
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("AcceptRequest", "Friend request accepted")
+            } else {
+                Log.e("AcceptRequest", "Error accepting friend request", task.exception)
+            }
+        }
+}
+@Composable
+fun UserReceivesRequest(currentUserId: String) {
+    var newFriendRequests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        listenForFriendRequests(currentUserId) { friendRequest ->
+            Log.d("FriendRequest", "Received friend request: $friendRequest")
+            newFriendRequests = newFriendRequests + friendRequest
+        }
+    }
+
+    Column {
+        Text(
+            text = "Requests",
+            style = TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2F9ECE),
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+
+        if (newFriendRequests.isEmpty()) {
+            Text(
+                text = "No new requests",
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                ),
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            newFriendRequests.forEach { request ->
+                FriendRequestItem(request)
+            }
+        }
+    }
+}
+
+@Composable
+fun FriendRequestItem(request: FriendRequest) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(Modifier.width(160.dp)) {
+            val painter =
+                rememberAsyncImagePainter(model = request.from) // Assuming the profile picture URL is in `from` for this example
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.background)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column {
+                Text(text = request.from, fontWeight = FontWeight.Bold)
+                Text(text = request.status, color = Color.Gray)
+            }
+        }
+
+        val acceptIcon =
+            painterResource(id = R.drawable.addfriends) // Replace with your accept icon resource ID
+        Row(
+            modifier = Modifier
+                .width(110.dp)
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFF2F9ECE),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(8.dp)
+                .clickable {
+                    Log.d("FriendRequest", "Accepting friend request from: ${request.from}")
+                    acceptFriendRequest(request)
+                }
+        ) {
+            Image(
+                painter = acceptIcon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+
+            Text(
+                text = "Accept",
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFF2F9ECE)
+                )
+            )
+        }
+    }
+}
 
 enum class BottomAppBarItem {
     Messages,

@@ -312,10 +312,9 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                                 Text(text = email, color = Color.Gray)
                             }
                         }
-                        Spacer(modifier = Modifier.width(100.dp))
                         val addFriend= painterResource(id = R.drawable.addfriends)
                         Row(
-                            modifier = Modifier
+                            modifier = Modifier.width(110.dp)
                                 .border(
                                     width = 1.dp,
                                     color = Color(0xFF2F9ECE), // You can change the color as needed

@@ -63,7 +63,6 @@ class Konnekt: ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             InstaChatComposeTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -95,11 +94,11 @@ fun AddFriendsPage()  {
         }
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter) // Aligns the Box at the bottom
-                .fillMaxWidth() // The BottomAppBar spans the full width
-                .height(80.dp)  // Desired height
+                .align(Alignment.BottomCenter) 
+                .fillMaxWidth() 
+                .height(80.dp)  
         ) {
-            BottomAppBarKonnekt(username = username, profilePic = profilePic) // Place your bottom bar here
+            BottomAppBarKonnekt(username = username, profilePic = profilePic) 
         }
     }
 }
@@ -318,11 +317,10 @@ fun UserAddFriends(username: String, profilePic: Uri) {
                             modifier = Modifier
                                 .border(
                                     width = 1.dp,
-                                    color = Color(0xFF2F9ECE), // You can change the color as needed
+                                    color = Color(0xFF2F9ECE), 
                                     shape = RoundedCornerShape(12.dp),
-                                    // You can change the shape as needed
                                 )
-                                .padding(8.dp) // Optional padding inside the border
+                                .padding(8.dp) 
                         ){
                             Image(
                                 painter = addFriend,
@@ -367,7 +365,7 @@ fun BottomAppBarKonnekt(username: String,profilePic: Uri) {
             .background(Color.White)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically // Align icons and text vertically
+        verticalAlignment = Alignment.CenterVertically 
     ) {
         BottomAppBarItemKonnekt(
             label = "Messages",
@@ -421,8 +419,8 @@ fun BottomAppBarItemKonnekt(
         modifier = Modifier
             .width(68.dp)
             .height(52.dp)
-            .clickable(onClick = onClick),  // Make the item clickable
-        horizontalAlignment = Alignment.CenterHorizontally // Align content in the center
+            .clickable(onClick = onClick),  
+        horizontalAlignment = Alignment.CenterHorizontally 
     ) {
         Image(
             painter = painterResource(id = if (isActive) activeIcon else passiveIcon),

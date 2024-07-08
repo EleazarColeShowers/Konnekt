@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -161,7 +163,7 @@ fun UserAddFriends(username: String, profilePic: Uri) {
 
     loadAllUsers()
 
-    fun sendFriendRequest(targetUsername: String) {
+ /*   fun sendFriendRequest(targetUserId: String) {
         val database = FirebaseDatabase.getInstance().reference
         val currentUser = FirebaseAuth.getInstance().currentUser
         val currentUserId = currentUser?.uid
@@ -169,23 +171,57 @@ fun UserAddFriends(username: String, profilePic: Uri) {
         if (currentUserId != null) {
             val friendRequest = mapOf(
                 "from" to currentUserId,
-                "to" to targetUsername,
+                "to" to targetUserId,
                 "status" to "pending"
             )
 
-            database.child("friend_requests").push().setValue(friendRequest)
+            // Save the friend request under the current user's node
+            database.child("friend_requests").child(targetUserId).push().setValue(friendRequest)
                 .addOnSuccessListener {
-                    // Handle success (e.g., show a message to the user)
                     Log.d("FriendRequest", "Friend request sent successfully")
                 }
                 .addOnFailureListener { exception ->
-                    // Handle failure
                     Log.e("FriendRequest", "Error sending friend request", exception)
                 }
         } else {
             Log.e("FriendRequest", "User not logged in")
         }
-    }
+    }*/
+ fun sendFriendRequest(targetUserId: String) {
+     val database = FirebaseDatabase.getInstance().reference
+     val currentUser = FirebaseAuth.getInstance().currentUser
+     val currentUserId = currentUser?.uid
+
+     if (currentUserId != null) {
+         val friendRequest = mapOf(
+             "from" to currentUserId,
+             "to" to targetUserId,
+             "status" to "pending"
+         )
+
+         // Generate a unique key for the new friend request
+         val newRequestKey = database.child("sent_requests").child(currentUserId).push().key
+
+         if (newRequestKey != null) {
+             val updates = mapOf(
+                 "/sent_requests/$currentUserId/$newRequestKey" to friendRequest,
+                 "/received_requests/$targetUserId/$newRequestKey" to friendRequest
+             )
+
+             database.updateChildren(updates)
+                 .addOnSuccessListener {
+                     Log.d("FriendRequest", "Friend request sent successfully")
+                 }
+                 .addOnFailureListener { exception ->
+                     Log.e("FriendRequest", "Error sending friend request", exception)
+                 }
+         } else {
+             Log.e("FriendRequest", "Failed to generate new request key")
+         }
+     } else {
+         Log.e("FriendRequest", "User not logged in")
+     }
+ }
 
     Column {
         Row(
@@ -384,55 +420,92 @@ data class FriendRequest(
     val status: String = "pending"
 )
 
-fun listenForFriendRequests(currentUserId: String, onNewRequest: (FriendRequest) -> Unit) {
+fun listenForFriendRequests(currentUserId: String, onNewRequest: (Pair<String, FriendRequest>) -> Unit) {
     val database = FirebaseDatabase.getInstance().reference
-    val friendRequestsRef = database.child("friend_requests")
+    val friendRequestsRef = database.child("received_requests").child(currentUserId)
 
-    friendRequestsRef.orderByChild("to").equalTo(currentUserId)
-        .addChildEventListener(object : ChildEventListener {
-            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                val friendRequest = dataSnapshot.getValue(FriendRequest::class.java)
-                friendRequest?.let { onNewRequest(it) }
-            }
-
-            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {}
-
-            override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
-
-            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {}
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Log.e("FriendRequestListener", "Error listening for friend requests", databaseError.toException())
-            }
-        })
-}
-
-fun acceptFriendRequest(request: FriendRequest) {
-    val database = FirebaseDatabase.getInstance().reference
-    val friendRequestsRef = database.child("friend_requests").child(request.to)
-
-    // Update the status of the friend request
-    friendRequestsRef.child(request.from).child("status").setValue("accepted")
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                Log.d("AcceptRequest", "Friend request accepted")
+    friendRequestsRef.addChildEventListener(object : ChildEventListener {
+        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+            val friendRequest = dataSnapshot.getValue(FriendRequest::class.java)
+            if (friendRequest != null) {
+                val requestId = dataSnapshot.key ?: ""
+                onNewRequest(Pair(requestId, friendRequest))
             } else {
-                Log.e("AcceptRequest", "Error accepting friend request", task.exception)
+                Log.e("FriendRequestListener", "Failed to parse friend request from snapshot")
             }
         }
+
+        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+        override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
+
+        override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            Log.e("FriendRequestListener", "Error listening for friend requests", databaseError.toException())
+        }
+    })
 }
+
+fun acceptFriendRequest(request: FriendRequest, requestId: String) {
+    val database = FirebaseDatabase.getInstance().reference
+
+    // Update the status of the friend request
+    val updates = mapOf(
+        "/sent_requests/${request.from}/$requestId/status" to "accepted",
+        "/received_requests/${request.to}/$requestId/status" to "accepted"
+    )
+
+    database.updateChildren(updates).addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            Log.d("AcceptRequest", "Friend request accepted")
+        } else {
+            Log.e("AcceptRequest", "Error accepting friend request", task.exception)
+        }
+    }
+}
+
 @Composable
 fun UserReceivesRequest(currentUserId: String) {
-    var newFriendRequests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
+    var newFriendRequests by remember { mutableStateOf<List<Pair<String, FriendRequest>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        listenForFriendRequests(currentUserId) { friendRequest ->
+    LaunchedEffect(currentUserId) {
+        isLoading = true
+        listenForFriendRequests(currentUserId) { (requestId, friendRequest) ->
             Log.d("FriendRequest", "Received friend request: $friendRequest")
-            newFriendRequests = newFriendRequests + friendRequest
+            newFriendRequests = newFriendRequests + Pair(requestId, friendRequest)
+            isLoading = false
         }
     }
 
     Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = {
+                Button(
+                    onClick = {
+                        // Manually refresh the friend requests
+                        isLoading = true
+                        newFriendRequests = emptyList() // Clear existing requests
+                        listenForFriendRequests(currentUserId) { (requestId, friendRequest) ->
+                            newFriendRequests = newFriendRequests + Pair(requestId, friendRequest)
+                            isLoading = false
+                        }
+                    },
+                    enabled = !isLoading,
+                ) {
+                    Text("Refresh")
+                }
+                if (isLoading) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    CircularProgressIndicator()
+                }
+            }
+        )
+
         Text(
             text = "Requests",
             style = TextStyle(
@@ -453,15 +526,15 @@ fun UserReceivesRequest(currentUserId: String) {
                 modifier = Modifier.padding(16.dp)
             )
         } else {
-            newFriendRequests.forEach { request ->
-                FriendRequestItem(request)
+            newFriendRequests.forEach { (requestId, request) ->
+                FriendRequestItem(request, requestId)
             }
         }
     }
 }
 
 @Composable
-fun FriendRequestItem(request: FriendRequest) {
+fun FriendRequestItem(request: FriendRequest, requestId: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -501,7 +574,7 @@ fun FriendRequestItem(request: FriendRequest) {
                 .padding(8.dp)
                 .clickable {
                     Log.d("FriendRequest", "Accepting friend request from: ${request.from}")
-                    acceptFriendRequest(request)
+                    acceptFriendRequest(request, requestId)
                 }
         ) {
             Image(
